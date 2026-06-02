@@ -38,9 +38,9 @@ def optimize():
         elif vehicles >= 20:
             signal_time = 40
         elif vehicles >= 10:
-            signal_time = 25
+            signal_time = 30
         else:
-            signal_time = 10
+            signal_time = 20
 
         return jsonify({
             "selected_lane": selected_lane,
