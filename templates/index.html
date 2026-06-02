@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mekhri Circle Loop Automation</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .main-header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 15px;
+            width: 100%;
+            max-width: 950px;
+        }
+        .main-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .container { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; }
+        
+        .simulation-box {
+            position: relative;
+            background: #000;
+            border: 3px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .timer-banner {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.85);
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            color: #fbbf24;
+            border-right: 5px solid #fbbf24;
+            z-index: 10;
+        }
+        canvas { display: block; }
+        .panel {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .section { border-bottom: 1px solid #334155; padding-bottom: 15px; }
+        .section:last-child { border: none; }
+        h3 { margin: 0 0 15px 0; color: var(--accent); font-size: 1rem; border-left: 3px solid var(--accent); padding-left: 10px; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        input[type="number"] {
+            width: 70px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-calc { background: #0284c7; color: white; }
+        .btn-go { background: #16a34a; color: white; }
+        .data-box { font-size: 0.95rem; margin-bottom: 8px; display: flex; justify-content: space-between;}
+        .data-box span:last-child { font-weight: bold; color: #38bdf8; }
+        .status-badge {
+            text-align: center;
+            font-weight: bold;
+            background: #334155;
+            padding: 6px;
+            border-radius: 4px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>Mekhri Circle Traffic Signal Optimization</h1>
+    </header>
+    
+    <div class="container">
+        <div class="simulation-box">
+            <div class="timer-banner">SIGNAL: <span id="clock">00s</span></div>
+            <canvas id="junction" width="550" height="550"></canvas>
+        </div>
+
+        <div class="panel">
+            <div class="section">
+                <h3>1. Traffic Density Inputs</h3>
+                <div class="row">
+                    <label style="color:#f87171">Airport:</label>
+                    <input type="number" id="airport" min="0" max="50" value="12" onchange="initSimulation()">
+                </div>
+                <div class="row">
+                    <label style="color:#60a5fa">Jayamahal:</label>
+                    <input type="number" id="jayamahal" min="0" max="50" value="4" onchange="initSimulation()">
+                </div>
+                <div class="row">
+                    <label style="color:#f472b6">Vidhana Soudha:</label>
+                    <input type="number" id="vidhana_soudha" min="0" max="50" value="18" onchange="initSimulation()">
+                </div>
+                <div class="row">
+                    <label style="color:#fbbf24">Yeshwanthpur:</label>
+                    <input type="number" id="yeshwanthpur" min="0" max="50" value="8" onchange="initSimulation()">
+                </div>
+                <div class="btn-group">
+                    <button class="btn-calc" onclick="initSimulation()">Reset Grid</button>
+                    <button class="btn-go" id="go-btn" onclick="startAutomatedLoop()">Run Cascade Loop</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>2. Active Loop Metrics</h3>
+                <div class="data-box"><span>Current Target Lane:</span><span id="out-win">-</span></div>
+                <div class="data-box"><span>Target Vehicles:</span><span id="out-count">-</span></div>
+                <div class="data-box"><span>Allocated Window:</span><span id="out-time">-</span></div>
+                <div class="status-badge" id="loop-status">Status: Idle</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('junction');
+        const ctx = canvas.getContext('2d');
+        
+        let activeLight = "None";
+        let timeRemaining = 0;
+        let running = false;
+        let cars = [];
+        let globalClockInterval = null;
+        let targetLaneSystem = "";
+        let loopActiveState = false;
+
+        const midX = canvas.width / 2;
+        const midY = canvas.height / 2;
+        const roadW = 120; 
+        const lineOffset = roadW / 2 + 30;
+
+        const carSize = 20;
+        const carGap = 15; 
+        const unitStep = carSize + carGap;
+
+        // SWAPPED VECTORS: Vidhana Soudha is now South (moving up), Yeshwanthpur is West (moving right)
+        const profiles = {
+            "Airport":        { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
+            "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
+            "Jayamahal":      { x: canvas.width + 20, y: midY - 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 25, color: '#60a5fa' },
+            "Yeshwanthpur":   { x: -20, y: midY + 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 25, color: '#fbbf24' }
+        };
+
+        function initSimulation() {
+            stopLoop();
+            activeLight = "None";
+            targetLaneSystem = "";
+            document.getElementById('loop-status').innerText = "Status: Idle";
+            document.getElementById('loop-status').style.background = "#334155";
+            document.getElementById('loop-status').style.color = "#94a3b8";
+
+            cars = [];
+            ["Airport", "Jayamahal", "Vidhana Soudha", "Yeshwanthpur"].forEach(dir => {
+                const elementId = dir.toLowerCase().replace(" ", "_");
+                const count = parseInt(document.getElementById(elementId).value) || 0;
+                const p = profiles[dir];
+                for(let i=0; i<count; i++) {
+                    let distanceBack = i * -unitStep;
+                    cars.push({
+                        id: `${dir}-${i}`,
+                        dir: dir,
+                        x: p.stopX + (dir === 'Jayamahal' || dir === 'Yeshwanthpur' ? distanceBack * Math.sign(p.dx) : 0),
+                        y: p.stopY + (dir === 'Airport' || dir === 'Vidhana Soudha' ? distanceBack * Math.sign(p.dy) : 0),
+                        color: p.color,
+                        passedLine: false
+                    });
+                }
+            });
+            draw();
+        }
+
+        function stopLoop() {
+            loopActiveState = false;
+            running = false;
+            clearInterval(globalClockInterval);
+            document.getElementById('clock').innerText = "00s";
+            document.getElementById('go-btn').disabled = false;
+            document.getElementById('go-btn').style.opacity = "1";
+        }
+
+        async function startAutomatedLoop() {
+            loopActiveState = true;
+            document.getElementById('go-btn').disabled = true;
+            document.getElementById('go-btn').style.opacity = "0.5";
+            document.getElementById('loop-status').innerText = "Status: Running...";
+            document.getElementById('loop-status').style.background = "#15803d";
+            document.getElementById('loop-status').style.color = "#fff";
+            
+            await evaluateNextGreedyPhase();
+        }
+
+        async function evaluateNextGreedyPhase() {
+            if (!loopActiveState) return;
+
+            const payload = {
+                airport: document.getElementById('airport').value || 0,
+                jayamahal: document.getElementById('jayamahal').value || 0,
+                vidhana_soudha: document.getElementById('vidhana_soudha').value || 0,
+                yeshwanthpur: document.getElementById('yeshwanthpur').value || 0
+            };
+
+            try {
+                const res = await fetch('/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.empty || data.selected_lane === "None") {
+                    document.getElementById('loop-status').innerText = "Status: Clear / Finished";
+                    document.getElementById('loop-status').style.background = "#1e3a8a";
+                    stopLoop();
+                    return;
+                }
+
+                document.getElementById('out-win').innerText = data.selected_lane;
+                document.getElementById('out-count').innerText = data.vehicles + " units";
+                document.getElementById('out-time').innerText = data.signal_time + "s";
+
+                targetLaneSystem = data.selected_lane;
+                timeRemaining = data.signal_time;
+                activeLight = targetLaneSystem;
+                running = true;
+
+                clearInterval(globalClockInterval);
+                globalClockInterval = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        document.getElementById('clock').innerText = timeRemaining.toString().padStart(2, '0') + "s";
+                        moveOneVehicleFromActiveLane();
+                    } else {
+                        clearInterval(globalClockInterval);
+                        running = false;
+                        activeLight = "None";
+                        evaluateNextGreedyPhase();
+                    }
+                }, 1000);
+
+            } catch (err) {
+                console.error(err);
+                stopLoop();
+            }
+        }
+
+        function moveOneVehicleFromActiveLane() {
+            let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
+            
+            if (activeLaneCars.length > 0) {
+                activeLaneCars.sort((a, b) => {
+                    let p = profiles[activeLight];
+                    if (p.dy > 0) return b.y - a.y; 
+                    if (p.dy < 0) return a.y - b.y; 
+                    if (p.dx > 0) return b.x - a.x; 
+                    return a.x - b.x;              
+                });
+
+                let leadCar = activeLaneCars[0];
+                leadCar.passedLine = true;
+
+                const inputId = activeLight.toLowerCase().replace(" ", "_");
+                let currentVal = parseInt(document.getElementById(inputId).value) || 0;
+                if (currentVal > 0) {
+                    document.getElementById(inputId).value = currentVal - 1;
+                }
+            }
+        }
+
+        function engineLoop() {
+            cars.forEach(c => {
+                if (c.passedLine) {
+                    let p = profiles[c.dir];
+                    c.x += p.dx * 0.05; 
+                    c.y += p.dy * 0.05;
+                }
+            });
+            draw();
+            requestAnimationFrame(engineLoop);
+        }
+
+        function draw() {
+            ctx.fillStyle = "#1e293b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(midX - roadW/2, 0, roadW, canvas.height); 
+            ctx.fillRect(0, midY - roadW/2, canvas.width, roadW); 
+
+            ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2; ctx.setLineDash([10, 10]);
+            ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, midY - roadW/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX, midY + roadW/2); ctx.lineTo(midX, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(midX - roadW/2, midY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX + roadW/2, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
+
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.setLineDash([]);
+            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY - lineOffset); ctx.lineTo(midX, midY - lineOffset); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX, midY + lineOffset); ctx.lineTo(midX + roadW/2, midY + lineOffset); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke();
+
+            // SWAPPED TEXT PLACEMENTS: Vidhana Soudha is on bottom, Yeshwanthpur is on left
+            ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px Arial";
+            ctx.fillText("AIRPORT", midX - roadW/2 - 60, 25);
+            ctx.fillText("JAYAMAHAL", canvas.width - 80, midY - roadW/2 - 15);
+            ctx.fillText("VIDHANA SOUDHA", midX + roadW/2 + 10, canvas.height - 15);
+            ctx.fillText("YESHWANTHPUR", 10, midY + roadW/2 + 25);
+
+            const beacons = {
+                "Airport":        { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
+                "Vidhana Soudha": { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
+                "Jayamahal":      { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
+                "Yeshwanthpur":   { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
+            };
+
+            for(let [dir, pos] of Object.entries(beacons)) {
+                let green = (activeLight === dir);
+                ctx.fillStyle = "#000"; ctx.fillRect(pos.x-12, pos.y-12, 24, 24);
+                ctx.fillStyle = green ? "#22c55e" : "#ef4444";
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, 8, 0, 2*Math.PI); ctx.fill();
+            }
+
+            cars.forEach(c => {
+                ctx.fillStyle = c.color; 
+                ctx.fillRect(c.x - 10, c.y - 10, carSize, carSize);
+                ctx.strokeStyle = "#000"; 
+                ctx.strokeRect(c.x - 10, c.y - 10, carSize, carSize);
+            });
+        }
+
+        initSimulation();
+        engineLoop();
+    </script>
+</body>
+</html>
