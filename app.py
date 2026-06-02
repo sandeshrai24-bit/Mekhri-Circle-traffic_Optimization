@@ -32,13 +32,13 @@ def optimize():
         vehicles = traffic[selected_lane]
 
         if vehicles >= 40:
-            signal_time = 50
+            signal_time = 70
         elif vehicles >= 30:
-            signal_time = 40
+            signal_time = 55
         elif vehicles >= 20:
-            signal_time = 30
+            signal_time = 40
         elif vehicles >= 10:
-            signal_time = 20
+            signal_time = 25
         else:
             signal_time = 10
 
