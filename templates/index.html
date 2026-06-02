@@ -4,11 +4,10 @@
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#38bdf8">
     <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mekhri Circle Loop Automation</title>
     <style>
         :root {
@@ -17,32 +16,43 @@
             --accent: #38bdf8;
             --text: #f1f5f9;
         }
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
         .main-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             border-bottom: 2px solid var(--accent);
-            padding-bottom: 15px;
+            padding-bottom: 10px;
             width: 100%;
             max-width: 950px;
         }
         .main-header h1 {
             margin: 0;
-            font-size: 2rem;
+            font-size: 1.5rem;
             color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .container { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; }
+        .container { 
+            display: flex; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            width: 100%;
+            max-width: 950px;
+        }
         
         .simulation-box {
             position: relative;
@@ -50,35 +60,52 @@
             border: 3px solid #334155;
             border-radius: 12px;
             overflow: hidden;
+            width: 100%;
+            max-width: 550px; /* Limits size on desktop */
+            aspect-ratio: 1 / 1; /* Keeps the canvas perfectly square */
         }
         
         .timer-banner {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 10px;
+            right: 10px;
             background: rgba(0,0,0,0.85);
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: #fbbf24;
-            border-right: 5px solid #fbbf24;
+            border-right: 4px solid #fbbf24;
             z-index: 10;
         }
-        canvas { display: block; }
+        canvas { 
+            display: block; 
+            width: 100%; /* Makes the internal 550px coordinate system scale fluidly down to fit smaller phone widths */
+            height: auto;
+        }
         .panel {
             background: var(--surface);
-            padding: 25px;
+            padding: 15px;
             border-radius: 12px;
-            width: 350px;
+            width: 100%;
+            max-width: 550px; /* Stretches alongside canvas on mobile */
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
+        
+        /* Desktop specific layout rules */
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .main-header h1 { font-size: 2rem; }
+            .panel { width: 350px; } /* Restores sidebar layout on wider screens */
+            .container { flex-wrap: nowrap; }
+        }
+
         .section { border-bottom: 1px solid #334155; padding-bottom: 15px; }
         .section:last-child { border: none; }
-        h3 { margin: 0 0 15px 0; color: var(--accent); font-size: 1rem; border-left: 3px solid var(--accent); padding-left: 10px; }
+        h3 { margin: 0 0 12px 0; color: var(--accent); font-size: 1rem; border-left: 3px solid var(--accent); padding-left: 10px; }
         .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         input[type="number"] {
             width: 70px;
@@ -109,7 +136,7 @@
 <body>
 
     <header class="main-header">
-        <h1>Mekhri Circle Traffic Signal Optimization</h1>
+        <h1>Mekhri Circle Traffic Signal</h1>
     </header>
     
     <div class="container">
@@ -174,7 +201,6 @@
         const carGap = 15; 
         const unitStep = carSize + carGap;
 
-        // SWAPPED VECTORS: Vidhana Soudha is now South (moving up), Yeshwanthpur is West (moving right)
         const profiles = {
             "Airport":        { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
             "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
@@ -309,7 +335,7 @@
 
         function engineLoop() {
             cars.forEach(c => {
-                if (c.passedLine) {
+                if (c.passedLine && c.dir === activeLight) {
                     let p = profiles[c.dir];
                     c.x += p.dx * 0.05; 
                     c.y += p.dy * 0.05;
@@ -337,7 +363,6 @@
             ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke();
 
-            // SWAPPED TEXT PLACEMENTS: Vidhana Soudha is on bottom, Yeshwanthpur is on left
             ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px Arial";
             ctx.fillText("AIRPORT", midX - roadW/2 - 60, 25);
             ctx.fillText("JAYAMAHAL", canvas.width - 80, midY - roadW/2 - 15);
@@ -368,19 +393,14 @@
 
         initSimulation();
         engineLoop();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                .then(reg => console.log('PWA Ready', reg))
+                .catch(err => console.log('Service Worker Error:', err));
+            });
+        }
     </script>
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/static/sw.js')
-        .then(reg => {
-            console.log('PWA Ready', reg);
-        })
-        .catch(err => {
-            console.log('Service Worker Error:', err);
-        });
-    });
-}
-</script>
 </body>
 </html>
