@@ -1,8 +1,3 @@
-The code you provided sets up the initial variables and layout for a left-hand traffic system, but the movement in `engineLoop()` isn't progressing the cars over time because the positions (`c.x`, `c.y`) are multiplied directly by `p.dx` and `p.dy` (which are fixed step values used for sizing queues rather than small positional velocity increments). Additionally, when a vehicle passes the line, its animation needs to step cleanly through the center intersection.
-
-Here is the corrected code. The directional velocity components have been isolated into clear properties (`vx`, `vy`) inside `profiles` to make vehicles drive smoothly down their respective lanes:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,10 +190,10 @@ Here is the corrected code. The directional velocity components have been isolat
         const unitStep = carSize + carGap;
 
         const profiles = {
-            "Vidhana Soudha": { x: midX + 30, y: -20,                 dx: 0,         dy: unitStep,  vx: 0,  vy: 2.5, stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
-            "Airport":        { x: midX - 30, y: canvas.height + 20, dx: 0,         dy: -unitStep, vx: 0,  vy: -2.5, stopX: midX - 30, stopY: midY + lineOffset, color: '#f472b6' },
-            "Yeshwanthpur":   { x: canvas.width + 20, y: midY + 30,  dx: -unitStep, dy: 0,         vx: -2.5, vy: 0,  stopX: midX + lineOffset, stopY: midY + 30,  color: '#60a5fa' },
-            "Jayamahal":      { x: -20,        y: midY - 30,         dx: unitStep,  dy: 0,         vx: 2.5, vy: 0,   stopX: midX - lineOffset, stopY: midY - 30,  color: '#fbbf24' }
+            "Vidhana Soudha": { x: midX + 30, y: -20,                 dx: 0,         dy: unitStep,  vx: 0,  vy: 3.5, stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
+            "Airport":        { x: midX - 30, y: canvas.height + 20, dx: 0,         dy: -unitStep, vx: 0,  vy: -3.5, stopX: midX - 30, stopY: midY + lineOffset, color: '#f472b6' },
+            "Yeshwanthpur":   { x: canvas.width + 20, y: midY + 30,  dx: -unitStep, dy: 0,         vx: -3.5, vy: 0,  stopX: midX + lineOffset, stopY: midY + 30,  color: '#60a5fa' },
+            "Jayamahal":      { x: -20,        y: midY - 30,         dx: unitStep,  dy: 0,         vx: 3.5, vy: 0,   stopX: midX - lineOffset, stopY: midY - 30,  color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -278,8 +273,6 @@ Here is the corrected code. The directional velocity components have been isolat
                 document.getElementById('out-time').innerText = data.signal_time + "s";
 
                 targetLaneSystem = data.selected_lane;
-                let vehiclesToClear = data.vehicles_cleared || data.vehicles;
-                let vehiclesCleared = 0;
                 timeRemaining = data.signal_time;
                 activeLight = targetLaneSystem;
                 running = true;
@@ -294,10 +287,6 @@ Here is the corrected code. The directional velocity components have been isolat
                     if (timeRemaining > 0) {
                         timeRemaining--;
                         document.getElementById('clock').innerText = timeRemaining.toString().padStart(2, '0') + "s";
-                        if (vehiclesCleared < vehiclesToClear) {
-                            moveOneVehicleFromActiveLane();
-                            vehiclesCleared++;
-                        }
                     } else {
                         clearInterval(globalClockInterval);
                         running = false;
@@ -318,31 +307,46 @@ Here is the corrected code. The directional velocity components have been isolat
             }
         }
 
-        function moveOneVehicleFromActiveLane() {
-            let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
-            if (activeLaneCars.length > 0) {
-                activeLaneCars.sort((a, b) => {
-                    let p = profiles[activeLight];
-                    if (p.dy > 0) return b.y - a.y;
-                    if (p.dy < 0) return a.y - b.y;
-                    if (p.dx > 0) return b.x - a.x;
-                    return a.x - b.x;
-                });
-                let leadCar = activeLaneCars[0];
-                leadCar.passedLine = true;
-                const inputId = activeLight.toLowerCase().replace(" ", "_");
-                let currentVal = parseInt(document.getElementById(inputId).value) || 0;
-                if (currentVal > 0) document.getElementById(inputId).value = currentVal - 1;
-            }
-        }
-
         function engineLoop() {
+            // Find the leading queued vehicle for the active lane to release it sequentially
+            if (running && activeLight !== "None") {
+                let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
+                if (activeLaneCars.length > 0) {
+                    activeLaneCars.sort((a, b) => {
+                        let p = profiles[activeLight];
+                        if (p.dy > 0) return b.y - a.y;
+                        if (p.dy < 0) return a.y - b.y;
+                        if (p.dx > 0) return b.x - a.x;
+                        return a.x - b.x;
+                    });
+                    
+                    let leadCar = activeLaneCars[0];
+                    let p = profiles[activeLight];
+                    
+                    // Trigger flow immediately when the previous car moves clear of the stop bar line
+                    let clearedStopBar = false;
+                    if (p.dy > 0 && leadCar.y >= p.stopY) clearedStopBar = true;
+                    if (p.dy < 0 && leadCar.y <= p.stopY) clearedStopBar = true;
+                    if (p.dx > 0 && leadCar.x >= p.stopX) clearedStopBar = true;
+                    if (p.dx < 0 && leadCar.x <= p.stopX) clearedStopBar = true;
+
+                    if (!leadCar.passedLine) {
+                        leadCar.passedLine = true;
+                        const inputId = activeLight.toLowerCase().replace(" ", "_");
+                        let currentVal = parseInt(document.getElementById(inputId).value) || 0;
+                        if (currentVal > 0) document.getElementById(inputId).value = currentVal - 1;
+                    }
+                }
+            }
+
             cars.forEach(c => {
                 let p = profiles[c.dir];
                 if (c.passedLine) {
+                    // Constant, smooth movement forward through the cross section
                     c.x += p.vx;
                     c.y += p.vy;
                 } else {
+                    // Check if there is a car directly ahead in the lane queue
                     let frontCar = cars.find(other => 
                         other.dir === c.dir && 
                         !other.passedLine && 
@@ -363,12 +367,14 @@ Here is the corrected code. The directional velocity components have been isolat
                         }
                     }
 
+                    // Pull up in line cleanly to fill any layout gaps
                     if (canMoveForward) {
                         c.x += p.vx * 0.5;
                         c.y += p.vy * 0.5;
                     }
                 }
             });
+
             draw();
             requestAnimationFrame(engineLoop);
         }
@@ -434,5 +440,3 @@ Here is the corrected code. The directional velocity components have been isolat
     </script>
 </body>
 </html>
-
-```
