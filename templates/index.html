@@ -351,12 +351,7 @@
 
                     let canMoveForward = false;
                     if (!frontCar) {
-                        if ((p.dy > 0 && c.y < p.stopY) ||
-                            (p.dy < 0 && c.y > p.stopY) ||
-                            (p.dx > 0 && c.x < p.stopX) ||
-                            (p.dx < 0 && c.x > p.stopX)) {
-                            canMoveForward = true;
-                        }
+                        canMoveForward = true;
                     }
 
                     if (canMoveForward) {
