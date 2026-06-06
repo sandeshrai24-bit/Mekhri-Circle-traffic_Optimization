@@ -202,10 +202,10 @@
         const unitStep = carSize + carGap;
 
         const profiles = {
-            "Airport":        { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
-            "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
-            "Jayamahal":      { x: canvas.width + 20, y: midY - 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 25, color: '#60a5fa' },
-            "Yeshwanthpur":   { x: -20, y: midY + 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 25, color: '#fbbf24' }
+            "Airport": { x: midX - 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX - 25, stopY: midY + lineOffset, color: '#f87171' },
+            "Vidhana Soudha": { x: midX + 25, y: -20, dx: 0, dy: unitStep, stopX: midX + 25, stopY: midY - lineOffset, color: '#f472b6' },
+            "Jayamahal": { x: -20, y: midY - 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY - 25, color: '#60a5fa' },
+            "Yeshwanthpur": { x: canvas.width + 20, y: midY + 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY + 25, color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -358,22 +358,22 @@
             ctx.beginPath(); ctx.moveTo(midX + roadW/2, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
 
             ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.setLineDash([]);
-            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY - lineOffset); ctx.lineTo(midX, midY - lineOffset); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX, midY + lineOffset); ctx.lineTo(midX + roadW/2, midY + lineOffset); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX, midY - lineOffset); ctx.lineTo(midX + roadW/2, midY - lineOffset); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY + lineOffset); ctx.lineTo(midX, midY + lineOffset); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY); ctx.lineTo(midX + lineOffset, midY + roadW/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY - roadW/2); ctx.lineTo(midX - lineOffset, midY); ctx.stroke();
 
             ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px Arial";
-            ctx.fillText("AIRPORT", midX - roadW/2 - 60, 25);
-            ctx.fillText("JAYAMAHAL", canvas.width - 80, midY - roadW/2 - 15);
-            ctx.fillText("VIDHANA SOUDHA", midX + roadW/2 + 10, canvas.height - 15);
-            ctx.fillText("YESHWANTHPUR", 10, midY + roadW/2 + 25);
+            ctx.fillText("VIDHANA SOUDHA", midX - roadW/2 - 115, 25);
+            ctx.fillText("YESHWANTHPUR", canvas.width - 95, midY - roadW/2 - 15);
+            ctx.fillText("AIRPORT", midX + roadW/2 + 10, canvas.height - 15);
+            ctx.fillText("JAYAMAHAL", 10, midY + roadW/2 + 25);
 
             const beacons = {
-                "Airport":        { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
-                "Vidhana Soudha": { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
-                "Jayamahal":      { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
-                "Yeshwanthpur":   { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
+                "Airport": { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
+                "Vidhana Soudha": { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
+                "Jayamahal": { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 },
+                "Yeshwanthpur": { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 }
             };
 
             for(let [dir, pos] of Object.entries(beacons)) {
@@ -403,4 +403,4 @@
         }
     </script>
 </body>
-</html>                                                                                                                                            
+</html>
