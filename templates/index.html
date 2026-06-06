@@ -53,6 +53,7 @@
             width: 100%;
             max-width: 950px;
         }
+        
         .simulation-box {
             position: relative;
             background: #000;
@@ -60,9 +61,10 @@
             border-radius: 12px;
             overflow: hidden;
             width: 100%;
-            max-width: 550px;
-            aspect-ratio: 1 / 1;
+            max-width: 550px; /* Limits size on desktop */
+            aspect-ratio: 1 / 1; /* Keeps the canvas perfectly square */
         }
+        
         .timer-banner {
             position: absolute;
             top: 10px;
@@ -78,7 +80,7 @@
         }
         canvas { 
             display: block; 
-            width: 100%;
+            width: 100%; /* Makes the internal 550px coordinate system scale fluidly down to fit smaller phone widths */
             height: auto;
         }
         .panel {
@@ -86,18 +88,21 @@
             padding: 15px;
             border-radius: 12px;
             width: 100%;
-            max-width: 550px;
+            max-width: 550px; /* Stretches alongside canvas on mobile */
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
+        
+        /* Desktop specific layout rules */
         @media (min-width: 768px) {
             body { padding: 20px; }
             .main-header h1 { font-size: 2rem; }
-            .panel { width: 350px; }
+            .panel { width: 350px; } /* Restores sidebar layout on wider screens */
             .container { flex-wrap: nowrap; }
         }
+
         .section { border-bottom: 1px solid #334155; padding-bottom: 15px; }
         .section:last-child { border: none; }
         h3 { margin: 0 0 12px 0; color: var(--accent); font-size: 1rem; border-left: 3px solid var(--accent); padding-left: 10px; }
@@ -197,10 +202,10 @@
         const unitStep = carSize + carGap;
 
         const profiles = {
-            "Airport":        { x: midX - 25, y: -20,                 dx: 0,         dy: 3.5,  stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
-            "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0,         dy: -3.5, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
-            "Jayamahal":      { x: canvas.width + 20, y: midY - 25,  dx: -3.5,      dy: 0,    stopX: midX + lineOffset, stopY: midY - 25,  color: '#60a5fa' },
-            "Yeshwanthpur":   { x: -20,        y: midY + 25,         dx: 3.5,       dy: 0,    stopX: midX - lineOffset, stopY: midY + 25,  color: '#fbbf24' }
+            "Airport":        { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
+            "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
+            "Jayamahal":      { x: canvas.width + 20, y: midY - 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 25, color: '#60a5fa' },
+            "Yeshwanthpur":   { x: -20, y: midY + 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 25, color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -285,16 +290,12 @@
                 activeLight = targetLaneSystem;
                 running = true;
 
-                moveOneVehicleFromActiveLane();
-
                 clearInterval(globalClockInterval);
                 globalClockInterval = setInterval(() => {
                     if (timeRemaining > 0) {
                         timeRemaining--;
                         document.getElementById('clock').innerText = timeRemaining.toString().padStart(2, '0') + "s";
-                        if (timeRemaining > 0) {
-                            moveOneVehicleFromActiveLane();
-                        }
+                        moveOneVehicleFromActiveLane();
                     } else {
                         clearInterval(globalClockInterval);
                         running = false;
@@ -334,30 +335,10 @@
 
         function engineLoop() {
             cars.forEach(c => {
-                let p = profiles[c.dir];
-                if (c.passedLine) {
-                    c.x += p.dx; 
-                    c.y += p.dy;
-                } else {
-                    let frontCar = cars.find(other => 
-                        other.dir === c.dir && 
-                        !other.passedLine && 
-                        other.id !== c.id &&
-                        ((p.dy > 0 && other.y > c.y && other.y - c.y <= unitStep) ||
-                         (p.dy < 0 && other.y < c.y && c.y - other.y <= unitStep) ||
-                         (p.dx > 0 && other.x > c.x && other.x - c.x <= unitStep) ||
-                         (p.dx < 0 && other.x < c.x && c.x - other.x <= unitStep))
-                    );
-
-                    let canMoveForward = false;
-                    if (!frontCar) {
-                        canMoveForward = true;
-                    }
-
-                    if (canMoveForward) {
-                        c.x += p.dx * 0.5;
-                        c.y += p.dy * 0.5;
-                    }
+                if (c.passedLine && c.dir === activeLight) {
+                    let p = profiles[c.dir];
+                    c.x += p.dx * 0.05; 
+                    c.y += p.dy * 0.05;
                 }
             });
             draw();
