@@ -61,8 +61,8 @@
             border-radius: 12px;
             overflow: hidden;
             width: 100%;
-            max-width: 550px; /* Limits size on desktop */
-            aspect-ratio: 1 / 1; /* Keeps the canvas perfectly square */
+            max-width: 550px;
+            aspect-ratio: 1 / 1;
         }
         
         .timer-banner {
@@ -80,7 +80,7 @@
         }
         canvas { 
             display: block; 
-            width: 100%; /* Makes the internal 550px coordinate system scale fluidly down to fit smaller phone widths */
+            width: 100%; 
             height: auto;
         }
         .panel {
@@ -88,18 +88,17 @@
             padding: 15px;
             border-radius: 12px;
             width: 100%;
-            max-width: 550px; /* Stretches alongside canvas on mobile */
+            max-width: 550px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
         
-        /* Desktop specific layout rules */
         @media (min-width: 768px) {
             body { padding: 20px; }
             .main-header h1 { font-size: 2rem; }
-            .panel { width: 350px; } /* Restores sidebar layout on wider screens */
+            .panel { width: 350px; } 
             .container { flex-wrap: nowrap; }
         }
 
@@ -149,20 +148,20 @@
             <div class="section">
                 <h3>1. Traffic Density Inputs</h3>
                 <div class="row">
-                    <label style="color:#f87171">Airport:</label>
-                    <input type="number" id="airport" min="0" max="50" value="12" onchange="initSimulation()">
+                    <label style="color:#f87171">Vidhana Soudha (Top Entry):</label>
+                    <input type="number" id="vidhana_soudha" min="0" max="50" value="12" onchange="initSimulation()">
                 </div>
                 <div class="row">
-                    <label style="color:#60a5fa">Jayamahal:</label>
-                    <input type="number" id="jayamahal" min="0" max="50" value="4" onchange="initSimulation()">
+                    <label style="color:#60a5fa">Yeshwanthpur (Right Entry):</label>
+                    <input type="number" id="yeshwanthpur" min="0" max="50" value="4" onchange="initSimulation()">
                 </div>
                 <div class="row">
-                    <label style="color:#f472b6">Vidhana Soudha:</label>
-                    <input type="number" id="vidhana_soudha" min="0" max="50" value="18" onchange="initSimulation()">
+                    <label style="color:#f472b6">Airport (Bottom Entry):</label>
+                    <input type="number" id="airport" min="0" max="50" value="18" onchange="initSimulation()">
                 </div>
                 <div class="row">
-                    <label style="color:#fbbf24">Yeshwanthpur:</label>
-                    <input type="number" id="yeshwanthpur" min="0" max="50" value="8" onchange="initSimulation()">
+                    <label style="color:#fbbf24">Jayamahal (Left Entry):</label>
+                    <input type="number" id="jayamahal" min="0" max="50" value="8" onchange="initSimulation()">
                 </div>
                 <div class="btn-group">
                     <button class="btn-calc" onclick="initSimulation()">Reset Grid</button>
@@ -202,10 +201,10 @@
         const unitStep = carSize + carGap;
 
         const profiles = {
-            "Airport":        { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
-            "Vidhana Soudha": { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
-            "Jayamahal":      { x: canvas.width + 20, y: midY - 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 25, color: '#60a5fa' },
-            "Yeshwanthpur":   { x: -20, y: midY + 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 25, color: '#fbbf24' }
+            "Vidhana Soudha": { x: midX - 25, y: -20, dx: 0, dy: unitStep, stopX: midX - 25, stopY: midY - lineOffset, color: '#f87171' },
+            "Airport":        { x: midX + 25, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 25, stopY: midY + lineOffset, color: '#f472b6' },
+            "Yeshwanthpur":   { x: canvas.width + 20, y: midY - 25, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 25, color: '#60a5fa' },
+            "Jayamahal":      { x: -20, y: midY + 25, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 25, color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -226,8 +225,8 @@
                     cars.push({
                         id: `${dir}-${i}`,
                         dir: dir,
-                        x: p.stopX + (dir === 'Jayamahal' || dir === 'Yeshwanthpur' ? distanceBack * Math.sign(p.dx) : 0),
-                        y: p.stopY + (dir === 'Airport' || dir === 'Vidhana Soudha' ? distanceBack * Math.sign(p.dy) : 0),
+                        x: p.stopX + (dir === 'Yeshwanthpur' || dir === 'Jayamahal' ? distanceBack * Math.sign(p.dx) : 0),
+                        y: p.stopY + (dir === 'Vidhana Soudha' || dir === 'Airport' ? distanceBack * Math.sign(p.dy) : 0),
                         color: p.color,
                         passedLine: false
                     });
@@ -358,22 +357,22 @@
             ctx.beginPath(); ctx.moveTo(midX + roadW/2, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
 
             ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.setLineDash([]);
-            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY - lineOffset); ctx.lineTo(midX, midY - lineOffset); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX, midY + lineOffset); ctx.lineTo(midX + roadW/2, midY + lineOffset); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY - lineOffset); ctx.lineTo(midX, midY - lineOffset); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(midX, midY + lineOffset); ctx.lineTo(midX + roadW/2, midY + lineOffset); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke(); 
 
             ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px Arial";
-            ctx.fillText("AIRPORT", midX - roadW/2 - 60, 25);
-            ctx.fillText("JAYAMAHAL", canvas.width - 80, midY - roadW/2 - 15);
-            ctx.fillText("VIDHANA SOUDHA", midX + roadW/2 + 10, canvas.height - 15);
-            ctx.fillText("YESHWANTHPUR", 10, midY + roadW/2 + 25);
+            ctx.fillText("VIDHANA SOUDHA", midX - roadW/2 - 60, 25);
+            ctx.fillText("YESHWANTHPUR", canvas.width - 95, midY - roadW/2 - 15);
+            ctx.fillText("AIRPORT", midX + roadW/2 + 10, canvas.height - 15);
+            ctx.fillText("JAYAMAHAL", 10, midY + roadW/2 + 25);
 
             const beacons = {
-                "Airport":        { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
-                "Vidhana Soudha": { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
-                "Jayamahal":      { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
-                "Yeshwanthpur":   { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
+                "Vidhana Soudha": { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
+                "Airport":        { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
+                "Yeshwanthpur":   { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
+                "Jayamahal":      { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
             };
 
             for(let [dir, pos] of Object.entries(beacons)) {
