@@ -282,11 +282,17 @@
                     "Vidhana Soudha": "vidhana_soudha", "Yeshwanthpur": "yeshwanthpur"
                 };
 
+                moveOneVehicleFromActiveLane();
+
                 clearInterval(globalClockInterval);
                 globalClockInterval = setInterval(() => {
                     if (timeRemaining > 0) {
                         timeRemaining--;
                         document.getElementById('clock').innerText = timeRemaining.toString().padStart(2, '0') + "s";
+                        
+                        if (timeRemaining > 0) {
+                            moveOneVehicleFromActiveLane();
+                        }
                     } else {
                         clearInterval(globalClockInterval);
                         running = false;
@@ -307,46 +313,32 @@
             }
         }
 
-        function engineLoop() {
-            // Find the leading queued vehicle for the active lane to release it sequentially
-            if (running && activeLight !== "None") {
-                let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
-                if (activeLaneCars.length > 0) {
-                    activeLaneCars.sort((a, b) => {
-                        let p = profiles[activeLight];
-                        if (p.dy > 0) return b.y - a.y;
-                        if (p.dy < 0) return a.y - b.y;
-                        if (p.dx > 0) return b.x - a.x;
-                        return a.x - b.x;
-                    });
-                    
-                    let leadCar = activeLaneCars[0];
+        function moveOneVehicleFromActiveLane() {
+            let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
+            if (activeLaneCars.length > 0) {
+                activeLaneCars.sort((a, b) => {
                     let p = profiles[activeLight];
-                    
-                    // Trigger flow immediately when the previous car moves clear of the stop bar line
-                    let clearedStopBar = false;
-                    if (p.dy > 0 && leadCar.y >= p.stopY) clearedStopBar = true;
-                    if (p.dy < 0 && leadCar.y <= p.stopY) clearedStopBar = true;
-                    if (p.dx > 0 && leadCar.x >= p.stopX) clearedStopBar = true;
-                    if (p.dx < 0 && leadCar.x <= p.stopX) clearedStopBar = true;
-
-                    if (!leadCar.passedLine) {
-                        leadCar.passedLine = true;
-                        const inputId = activeLight.toLowerCase().replace(" ", "_");
-                        let currentVal = parseInt(document.getElementById(inputId).value) || 0;
-                        if (currentVal > 0) document.getElementById(inputId).value = currentVal - 1;
-                    }
-                }
+                    if (p.dy > 0) return b.y - a.y;
+                    if (p.dy < 0) return a.y - b.y;
+                    if (p.dx > 0) return b.x - a.x;
+                    return a.x - b.x;
+                });
+                let leadCar = activeLaneCars[0];
+                leadCar.passedLine = true;
+                
+                const inputId = activeLight.toLowerCase().replace(" ", "_");
+                let currentVal = parseInt(document.getElementById(inputId).value) || 0;
+                if (currentVal > 0) document.getElementById(inputId).value = currentVal - 1;
             }
+        }
 
+        function engineLoop() {
             cars.forEach(c => {
                 let p = profiles[c.dir];
                 if (c.passedLine) {
-                    // Constant, smooth movement forward through the cross section
                     c.x += p.vx;
                     c.y += p.vy;
                 } else {
-                    // Check if there is a car directly ahead in the lane queue
                     let frontCar = cars.find(other => 
                         other.dir === c.dir && 
                         !other.passedLine && 
@@ -367,14 +359,12 @@
                         }
                     }
 
-                    // Pull up in line cleanly to fill any layout gaps
                     if (canMoveForward) {
                         c.x += p.vx * 0.5;
                         c.y += p.vy * 0.5;
                     }
                 }
             });
-
             draw();
             requestAnimationFrame(engineLoop);
         }
