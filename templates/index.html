@@ -16,9 +16,7 @@
             --accent: #38bdf8;
             --text: #f1f5f9;
         }
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
             background-color: var(--bg);
@@ -53,7 +51,6 @@
             width: 100%;
             max-width: 950px;
         }
-        
         .simulation-box {
             position: relative;
             background: #000;
@@ -64,7 +61,6 @@
             max-width: 550px;
             aspect-ratio: 1 / 1;
         }
-        
         .timer-banner {
             position: absolute;
             top: 10px;
@@ -78,11 +74,7 @@
             border-right: 4px solid #fbbf24;
             z-index: 10;
         }
-        canvas { 
-            display: block; 
-            width: 100%; 
-            height: auto;
-        }
+        canvas { display: block; width: 100%; height: auto; }
         .panel {
             background: var(--surface);
             padding: 15px;
@@ -94,14 +86,12 @@
             flex-direction: column;
             gap: 15px;
         }
-        
         @media (min-width: 768px) {
             body { padding: 20px; }
             .main-header h1 { font-size: 2rem; }
-            .panel { width: 350px; } 
+            .panel { width: 350px; }
             .container { flex-wrap: nowrap; }
         }
-
         .section { border-bottom: 1px solid #334155; padding-bottom: 15px; }
         .section:last-child { border: none; }
         h3 { margin: 0 0 12px 0; color: var(--accent); font-size: 1rem; border-left: 3px solid var(--accent); padding-left: 10px; }
@@ -193,18 +183,18 @@
 
         const midX = canvas.width / 2;
         const midY = canvas.height / 2;
-        const roadW = 120; 
+        const roadW = 120;
         const lineOffset = roadW / 2 + 30;
-
         const carSize = 20;
-        const carGap = 15; 
+        const carGap = 15;
         const unitStep = carSize + carGap;
 
+
         const profiles = {
-            "Vidhana Soudha": { x: midX - 30, y: -20, dx: 0, dy: unitStep, stopX: midX - 30, stopY: midY - lineOffset, color: '#f87171' },
-            "Airport":        { x: midX + 30, y: canvas.height + 20, dx: 0, dy: -unitStep, stopX: midX + 30, stopY: midY + lineOffset, color: '#f472b6' },
-            "Yeshwanthpur":   { x: canvas.width + 20, y: midY - 30, dx: -unitStep, dy: 0, stopX: midX + lineOffset, stopY: midY - 30, color: '#60a5fa' },
-            "Jayamahal":      { x: -20, y: midY + 30, dx: unitStep, dy: 0, stopX: midX - lineOffset, stopY: midY + 30, color: '#fbbf24' }
+            "Vidhana Soudha": { x: midX + 30, y: -20,               dx: 0,         dy: unitStep,  stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
+            "Airport":        { x: midX - 30, y: canvas.height + 20, dx: 0,         dy: -unitStep, stopX: midX - 30, stopY: midY + lineOffset, color: '#f472b6' },
+            "Yeshwanthpur":   { x: canvas.width + 20, y: midY + 30,  dx: -unitStep, dy: 0,         stopX: midX + lineOffset, stopY: midY + 30,  color: '#60a5fa' },
+            "Jayamahal":      { x: -20,        y: midY - 30,         dx: unitStep,  dy: 0,         stopX: midX - lineOffset, stopY: midY - 30,  color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -220,7 +210,7 @@
                 const elementId = dir.toLowerCase().replace(" ", "_");
                 const count = parseInt(document.getElementById(elementId).value) || 0;
                 const p = profiles[dir];
-                for(let i=0; i<count; i++) {
+                for (let i = 0; i < count; i++) {
                     let distanceBack = i * -unitStep;
                     cars.push({
                         id: `${dir}-${i}`,
@@ -251,7 +241,6 @@
             document.getElementById('loop-status').innerText = "Status: Running...";
             document.getElementById('loop-status').style.background = "#15803d";
             document.getElementById('loop-status').style.color = "#fff";
-            
             await evaluateNextGreedyPhase();
         }
 
@@ -311,24 +300,19 @@
 
         function moveOneVehicleFromActiveLane() {
             let activeLaneCars = cars.filter(c => c.dir === activeLight && !c.passedLine);
-            
             if (activeLaneCars.length > 0) {
                 activeLaneCars.sort((a, b) => {
                     let p = profiles[activeLight];
-                    if (p.dy > 0) return b.y - a.y; 
-                    if (p.dy < 0) return a.y - b.y; 
-                    if (p.dx > 0) return b.x - a.x; 
-                    return a.x - b.x;              
+                    if (p.dy > 0) return b.y - a.y;
+                    if (p.dy < 0) return a.y - b.y;
+                    if (p.dx > 0) return b.x - a.x;
+                    return a.x - b.x;
                 });
-
                 let leadCar = activeLaneCars[0];
                 leadCar.passedLine = true;
-
                 const inputId = activeLight.toLowerCase().replace(" ", "_");
                 let currentVal = parseInt(document.getElementById(inputId).value) || 0;
-                if (currentVal > 0) {
-                    document.getElementById(inputId).value = currentVal - 1;
-                }
+                if (currentVal > 0) document.getElementById(inputId).value = currentVal - 1;
             }
         }
 
@@ -336,7 +320,7 @@
             cars.forEach(c => {
                 if (c.passedLine && c.dir === activeLight) {
                     let p = profiles[c.dir];
-                    c.x += p.dx * 0.05; 
+                    c.x += p.dx * 0.05;
                     c.y += p.dy * 0.05;
                 }
             });
@@ -346,46 +330,56 @@
 
         function draw() {
             ctx.fillStyle = "#1e293b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#334155";
-            ctx.fillRect(midX - roadW/2, 0, roadW, canvas.height); 
-            ctx.fillRect(0, midY - roadW/2, canvas.width, roadW); 
 
+            
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(midX - roadW/2, 0, roadW, canvas.height);
+            ctx.fillRect(0, midY - roadW/2, canvas.width, roadW);
+
+            
             ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2; ctx.setLineDash([10, 10]);
             ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, midY - roadW/2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(midX, midY + roadW/2); ctx.lineTo(midX, canvas.height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(midX - roadW/2, midY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(midX + roadW/2, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
 
+            
             ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.setLineDash([]);
-            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY - lineOffset); ctx.lineTo(midX, midY - lineOffset); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(midX, midY + lineOffset); ctx.lineTo(midX + roadW/2, midY + lineOffset); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY - roadW/2); ctx.lineTo(midX + lineOffset, midY); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY); ctx.lineTo(midX - lineOffset, midY + roadW/2); ctx.stroke(); 
+            
+            ctx.beginPath(); ctx.moveTo(midX, midY - lineOffset); ctx.lineTo(midX + roadW/2, midY - lineOffset); ctx.stroke();
+            
+            ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY + lineOffset); ctx.lineTo(midX, midY + lineOffset); ctx.stroke();
+            
+            ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY); ctx.lineTo(midX + lineOffset, midY + roadW/2); ctx.stroke();
+            
+            ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY - roadW/2); ctx.lineTo(midX - lineOffset, midY); ctx.stroke();
 
+            
             ctx.fillStyle = "#94a3b8"; ctx.font = "bold 12px Arial";
             ctx.fillText("VIDHANA SOUDHA", midX - roadW/2 - 125, 40);
             ctx.fillText("YESHWANTHPUR", canvas.width - 120, midY - roadW/2 - 25);
             ctx.fillText("AIRPORT", midX + roadW/2 + 25, canvas.height - 35);
             ctx.fillText("JAYAMAHAL", 20, midY + roadW/2 + 40);
 
+            
             const beacons = {
                 "Vidhana Soudha": { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
                 "Airport":        { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
                 "Yeshwanthpur":   { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
                 "Jayamahal":      { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
             };
-
-            for(let [dir, pos] of Object.entries(beacons)) {
+            for (let [dir, pos] of Object.entries(beacons)) {
                 let green = (activeLight === dir);
                 ctx.fillStyle = "#000"; ctx.fillRect(pos.x-12, pos.y-12, 24, 24);
                 ctx.fillStyle = green ? "#22c55e" : "#ef4444";
                 ctx.beginPath(); ctx.arc(pos.x, pos.y, 8, 0, 2*Math.PI); ctx.fill();
             }
 
+            
             cars.forEach(c => {
-                ctx.fillStyle = c.color; 
+                ctx.fillStyle = c.color;
                 ctx.fillRect(c.x - 10, c.y - 10, carSize, carSize);
-                ctx.strokeStyle = "#000"; 
+                ctx.strokeStyle = "#000";
                 ctx.strokeRect(c.x - 10, c.y - 10, carSize, carSize);
             });
         }
@@ -396,8 +390,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/static/sw.js')
-                .then(reg => console.log('PWA Ready', reg))
-                .catch(err => console.log('Service Worker Error:', err));
+                    .then(reg => console.log('PWA Ready', reg))
+                    .catch(err => console.log('Service Worker Error:', err));
             });
         }
     </script>
