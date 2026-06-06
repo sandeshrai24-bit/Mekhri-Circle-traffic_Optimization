@@ -1,3 +1,8 @@
+The code you provided sets up the initial variables and layout for a left-hand traffic system, but the movement in `engineLoop()` isn't progressing the cars over time because the positions (`c.x`, `c.y`) are multiplied directly by `p.dx` and `p.dy` (which are fixed step values used for sizing queues rather than small positional velocity increments). Additionally, when a vehicle passes the line, its animation needs to step cleanly through the center intersection.
+
+Here is the corrected code. The directional velocity components have been isolated into clear properties (`vx`, `vy`) inside `profiles` to make vehicles drive smoothly down their respective lanes:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,10 +195,10 @@
         const unitStep = carSize + carGap;
 
         const profiles = {
-            "Vidhana Soudha": { x: midX + 30, y: -20,               dx: 0,         dy: unitStep,  stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
-            "Airport":        { x: midX - 30, y: canvas.height + 20, dx: 0,         dy: -unitStep, stopX: midX - 30, stopY: midY + lineOffset, color: '#f472b6' },
-            "Yeshwanthpur":   { x: canvas.width + 20, y: midY + 30,  dx: -unitStep, dy: 0,         stopX: midX + lineOffset, stopY: midY + 30,  color: '#60a5fa' },
-            "Jayamahal":      { x: -20,        y: midY - 30,         dx: unitStep,  dy: 0,         stopX: midX - lineOffset, stopY: midY - 30,  color: '#fbbf24' }
+            "Vidhana Soudha": { x: midX + 30, y: -20,                 dx: 0,         dy: unitStep,  vx: 0,  vy: 2.5, stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
+            "Airport":        { x: midX - 30, y: canvas.height + 20, dx: 0,         dy: -unitStep, vx: 0,  vy: -2.5, stopX: midX - 30, stopY: midY + lineOffset, color: '#f472b6' },
+            "Yeshwanthpur":   { x: canvas.width + 20, y: midY + 30,  dx: -unitStep, dy: 0,         vx: -2.5, vy: 0,  stopX: midX + lineOffset, stopY: midY + 30,  color: '#60a5fa' },
+            "Jayamahal":      { x: -20,        y: midY - 30,         dx: unitStep,  dy: 0,         vx: 2.5, vy: 0,   stopX: midX - lineOffset, stopY: midY - 30,  color: '#fbbf24' }
         };
 
         function initSimulation() {
@@ -273,7 +278,7 @@
                 document.getElementById('out-time').innerText = data.signal_time + "s";
 
                 targetLaneSystem = data.selected_lane;
-                let vehiclesToClear = data.vehicles_cleared;
+                let vehiclesToClear = data.vehicles_cleared || data.vehicles;
                 let vehiclesCleared = 0;
                 timeRemaining = data.signal_time;
                 activeLight = targetLaneSystem;
@@ -333,10 +338,35 @@
 
         function engineLoop() {
             cars.forEach(c => {
-                if (c.passedLine && c.dir === activeLight) {
-                    let p = profiles[c.dir];
-                    c.x += p.dx * 0.05;
-                    c.y += p.dy * 0.05;
+                let p = profiles[c.dir];
+                if (c.passedLine) {
+                    c.x += p.vx;
+                    c.y += p.vy;
+                } else {
+                    let frontCar = cars.find(other => 
+                        other.dir === c.dir && 
+                        !other.passedLine && 
+                        other.id !== c.id &&
+                        ((p.dy > 0 && other.y > c.y && other.y - c.y <= unitStep) ||
+                         (p.dy < 0 && other.y < c.y && c.y - other.y <= unitStep) ||
+                         (p.dx > 0 && other.x > c.x && other.x - c.x <= unitStep) ||
+                         (p.dx < 0 && other.x < c.x && c.x - other.x <= unitStep))
+                    );
+
+                    let canMoveForward = false;
+                    if (!frontCar) {
+                        if ((p.dy > 0 && c.y < p.stopY) ||
+                            (p.dy < 0 && c.y > p.stopY) ||
+                            (p.dx > 0 && c.x < p.stopX) ||
+                            (p.dx < 0 && c.x > p.stopX)) {
+                            canMoveForward = true;
+                        }
+                    }
+
+                    if (canMoveForward) {
+                        c.x += p.vx * 0.5;
+                        c.y += p.vy * 0.5;
+                    }
                 }
             });
             draw();
@@ -404,3 +434,5 @@
     </script>
 </body>
 </html>
+
+```
