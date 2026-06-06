@@ -43,11 +43,11 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .container { 
-            display: flex; 
-            gap: 15px; 
-            flex-wrap: wrap; 
-            justify-content: center; 
+        .container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
             width: 100%;
             max-width: 950px;
         }
@@ -110,7 +110,7 @@
         button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-calc { background: #0284c7; color: white; }
         .btn-go { background: #16a34a; color: white; }
-        .data-box { font-size: 0.95rem; margin-bottom: 8px; display: flex; justify-content: space-between;}
+        .data-box { font-size: 0.95rem; margin-bottom: 8px; display: flex; justify-content: space-between; }
         .data-box span:last-child { font-weight: bold; color: #38bdf8; }
         .status-badge {
             text-align: center;
@@ -127,7 +127,7 @@
     <header class="main-header">
         <h1>Mekhri Circle Traffic Signal</h1>
     </header>
-    
+
     <div class="container">
         <div class="simulation-box">
             <div class="timer-banner">SIGNAL: <span id="clock">00s</span></div>
@@ -172,7 +172,7 @@
     <script>
         const canvas = document.getElementById('junction');
         const ctx = canvas.getContext('2d');
-        
+
         let activeLight = "None";
         let timeRemaining = 0;
         let running = false;
@@ -188,7 +188,6 @@
         const carSize = 20;
         const carGap = 15;
         const unitStep = carSize + carGap;
-
 
         const profiles = {
             "Vidhana Soudha": { x: midX + 30, y: -20,               dx: 0,         dy: unitStep,  stopX: midX + 30, stopY: midY - lineOffset, color: '#f87171' },
@@ -274,20 +273,36 @@
                 document.getElementById('out-time').innerText = data.signal_time + "s";
 
                 targetLaneSystem = data.selected_lane;
+                let vehiclesToClear = data.vehicles_cleared;
+                let vehiclesCleared = 0;
                 timeRemaining = data.signal_time;
                 activeLight = targetLaneSystem;
                 running = true;
+
+                const keyMap = {
+                    "Airport": "airport", "Jayamahal": "jayamahal",
+                    "Vidhana Soudha": "vidhana_soudha", "Yeshwanthpur": "yeshwanthpur"
+                };
 
                 clearInterval(globalClockInterval);
                 globalClockInterval = setInterval(() => {
                     if (timeRemaining > 0) {
                         timeRemaining--;
                         document.getElementById('clock').innerText = timeRemaining.toString().padStart(2, '0') + "s";
-                        moveOneVehicleFromActiveLane();
+                        if (vehiclesCleared < vehiclesToClear) {
+                            moveOneVehicleFromActiveLane();
+                            vehiclesCleared++;
+                        }
                     } else {
                         clearInterval(globalClockInterval);
                         running = false;
                         activeLight = "None";
+                        if (data.remaining) {
+                            for (const [lane, rem] of Object.entries(data.remaining)) {
+                                const el = document.getElementById(keyMap[lane]);
+                                if (el) el.value = rem;
+                            }
+                        }
                         evaluateNextGreedyPhase();
                     }
                 }, 1000);
@@ -329,53 +344,45 @@
         }
 
         function draw() {
-            ctx.fillStyle = "#1e293b"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            
             ctx.fillStyle = "#334155";
             ctx.fillRect(midX - roadW/2, 0, roadW, canvas.height);
             ctx.fillRect(0, midY - roadW/2, canvas.width, roadW);
 
-            
             ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2; ctx.setLineDash([10, 10]);
             ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, midY - roadW/2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(midX, midY + roadW/2); ctx.lineTo(midX, canvas.height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(midX - roadW/2, midY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(midX + roadW/2, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
 
-            
             ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.setLineDash([]);
-            
             ctx.beginPath(); ctx.moveTo(midX, midY - lineOffset); ctx.lineTo(midX + roadW/2, midY - lineOffset); ctx.stroke();
-            
             ctx.beginPath(); ctx.moveTo(midX - roadW/2, midY + lineOffset); ctx.lineTo(midX, midY + lineOffset); ctx.stroke();
-            
             ctx.beginPath(); ctx.moveTo(midX + lineOffset, midY); ctx.lineTo(midX + lineOffset, midY + roadW/2); ctx.stroke();
-            
             ctx.beginPath(); ctx.moveTo(midX - lineOffset, midY - roadW/2); ctx.lineTo(midX - lineOffset, midY); ctx.stroke();
 
-            
             ctx.fillStyle = "#94a3b8"; ctx.font = "bold 12px Arial";
             ctx.fillText("VIDHANA SOUDHA", midX - roadW/2 - 125, 40);
             ctx.fillText("YESHWANTHPUR", canvas.width - 120, midY - roadW/2 - 25);
             ctx.fillText("AIRPORT", midX + roadW/2 + 25, canvas.height - 35);
             ctx.fillText("JAYAMAHAL", 20, midY + roadW/2 + 40);
 
-            
             const beacons = {
-                "Vidhana Soudha": { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 },
-                "Airport":        { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
-                "Yeshwanthpur":   { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
-                "Jayamahal":      { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 }
+                "Vidhana Soudha": { x: midX + roadW/2 + 20, y: midY - roadW/2 - 20 },
+                "Airport":        { x: midX - roadW/2 - 20, y: midY + roadW/2 + 20 },
+                "Yeshwanthpur":   { x: midX + roadW/2 + 20, y: midY + roadW/2 + 20 },
+                "Jayamahal":      { x: midX - roadW/2 - 20, y: midY - roadW/2 - 20 }
             };
+
             for (let [dir, pos] of Object.entries(beacons)) {
                 let green = (activeLight === dir);
-                ctx.fillStyle = "#000"; ctx.fillRect(pos.x-12, pos.y-12, 24, 24);
+                ctx.fillStyle = "#000"; ctx.fillRect(pos.x - 12, pos.y - 12, 24, 24);
                 ctx.fillStyle = green ? "#22c55e" : "#ef4444";
-                ctx.beginPath(); ctx.arc(pos.x, pos.y, 8, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI); ctx.fill();
             }
 
-            
             cars.forEach(c => {
                 ctx.fillStyle = c.color;
                 ctx.fillRect(c.x - 10, c.y - 10, carSize, carSize);
